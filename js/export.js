@@ -166,9 +166,14 @@ async function exportPDF() {
     const { jsPDF } = window.jspdf;
     const cardW    = card.offsetWidth;
     const cardH    = card.offsetHeight;
-    // Convert px to mm: 1 inch = 25.4 mm, 96 px/inch → 25.4 / 96 ≈ 0.2646 mm/px
-    const pdfW     = cardW * 0.2646;
-    const pdfH     = cardH * 0.2646;
+    // Convert px to mm using the standard web pixel density of 96 px/inch:
+    // 1 mm = 96 / 25.4 ≈ 3.779 px  →  1 px ≈ 0.2646 mm.
+    // Note: this produces consistent PDF sizing regardless of the display's
+    // physical DPI (devicePixelRatio), because offsetWidth/Height are always
+    // CSS pixel values (not physical pixels).
+    const PX_TO_MM = 25.4 / 96; // ≈ 0.2646 mm per CSS pixel
+    const pdfW     = cardW * PX_TO_MM;
+    const pdfH     = cardH * PX_TO_MM;
     const pdf      = new jsPDF({
       orientation: pdfW > pdfH ? 'landscape' : 'portrait',
       unit: 'mm',
