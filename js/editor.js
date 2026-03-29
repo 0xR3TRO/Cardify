@@ -85,7 +85,7 @@ function initEditor() {
   professionInput.value = cardState.profession;
   bioInput.value        = cardState.bio;
 
-  const onTextChange = debounce(() => {
+  const handleTextChange = debounce(() => {
     cardState.firstName  = firstNameInput.value.trim();
     cardState.lastName   = lastNameInput.value.trim();
     cardState.profession = professionInput.value.trim();
@@ -93,10 +93,10 @@ function initEditor() {
     renderPreview();
   }, 80);
 
-  firstNameInput.addEventListener('input', onTextChange);
-  lastNameInput.addEventListener('input', onTextChange);
-  professionInput.addEventListener('input', onTextChange);
-  bioInput.addEventListener('input', onTextChange);
+  firstNameInput.addEventListener('input', handleTextChange);
+  lastNameInput.addEventListener('input', handleTextChange);
+  professionInput.addEventListener('input', handleTextChange);
+  bioInput.addEventListener('input', handleTextChange);
 
   // Photo upload
   const photoInput   = document.getElementById('input-photo');
