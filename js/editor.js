@@ -1,354 +1,781 @@
 /**
  * editor.js
- * Manages the editor panel: reads form inputs, applies changes to app state,
- * and triggers live preview updates.
+ * Editor orchestration: UI event binding, state management, template lifecycle, and live preview updates.
  */
 
-/**
- * Available social media platforms with their brand colors and inline SVG paths.
- */
-const SOCIAL_PLATFORMS = {
-  facebook: {
-    label: 'Facebook',
-    color: '#1877F2',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>',
-  },
-  twitter: {
-    label: 'Twitter/X',
-    color: '#000000',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.736-8.859L1.254 2.25H8.08l4.258 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>',
-  },
-  instagram: {
-    label: 'Instagram',
-    color: '#E1306C',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162S8.597 18.163 12 18.163s6.162-2.759 6.162-6.162S15.403 5.838 12 5.838zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>',
-  },
-  linkedin: {
-    label: 'LinkedIn',
-    color: '#0A66C2',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>',
-  },
-  youtube: {
-    label: 'YouTube',
-    color: '#FF0000',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
-  },
-  github: {
-    label: 'GitHub',
-    color: '#181717',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>',
-  },
-  tiktok: {
-    label: 'TikTok',
-    color: '#000000',
-    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>',
-  },
-};
+import {
+  createId,
+  debounce,
+  deepClone,
+  downloadText,
+  readFileAsDataUrl,
+  showToast
+} from './utils.js';
+import {
+  DEFAULT_TEMPLATES,
+  buildTemplateExportPayload,
+  deleteSavedTemplate,
+  getSavedTemplates,
+  parseTemplateImportPayload,
+  saveTemplateSnapshot,
+  setSavedTemplates
+} from './templates.js';
+import { SOCIAL_NETWORKS, createPreviewController } from './preview.js';
+import { initExportSystem } from './export.js';
 
 /**
- * App state — single source of truth for all card data and settings.
- * Exported globally as `window.cardState`.
+ * UI theme preference storage key.
+ * @type {string}
  */
-const cardState = {
-  firstName: 'John',
-  lastName: 'Doe',
-  profession: 'UI/UX Designer',
-  bio: 'A short description about yourself.',
-  photo: null,
-  socialLinks: [],
+const THEME_STORAGE_KEY = 'cardify.creator.ui-theme';
+
+/**
+ * Supported layout tokens.
+ * @type {Array<'vertical'|'horizontal'|'compact'>}
+ */
+const SUPPORTED_LAYOUTS = ['vertical', 'horizontal', 'compact'];
+
+/**
+ * Supported icon style tokens.
+ * @type {Array<'filled'|'outline'|'minimal'>}
+ */
+const SUPPORTED_ICON_STYLES = ['filled', 'outline', 'minimal'];
+
+/**
+ * UI labels for shadow slider values.
+ * @type {Array<string>}
+ */
+const SHADOW_LABELS = ['None', 'Soft', 'Medium', 'Strong'];
+
+/**
+ * Base state used for first load and state normalization.
+ * @type {object}
+ */
+const BASE_STATE = {
+  firstName: 'Avery',
+  lastName: 'Stone',
+  profession: 'Product Engineer',
+  bio: 'Building crisp interfaces and useful tooling for modern teams.',
+  photoDataUrl: '',
+  socialLinks: [
+    { id: 'default_linkedin', platform: 'linkedin', url: 'https://linkedin.com' },
+    { id: 'default_github', platform: 'github', url: 'https://github.com' }
+  ],
   layout: 'vertical',
-  accentColor: '#4070f4',
-  bgColor: '#ffffff',
-  textColor: '#333333',
-  font: 'Poppins',
-  borderRadius: 24,
-  shadowLevel: 1,
   iconStyle: 'filled',
+  fontFamily: 'Space Grotesk',
+  backgroundColor: '#ffffff',
+  textColor: '#14213d',
+  accentColor: '#0d9488',
+  borderRadius: 24,
+  shadowLevel: 2,
+  spacing: 24
 };
 
-window.cardState = cardState;
-window.SOCIAL_PLATFORMS = SOCIAL_PLATFORMS;
+/**
+ * Mutable application state.
+ * @type {any}
+ */
+let state = deepClone(BASE_STATE);
 
 /**
- * Initializes the editor: attaches all event listeners to form inputs.
+ * Preview controller instance.
+ * @type {{render: () => void, updateScale: () => void, getCardElement: () => HTMLElement} | null}
  */
-function initEditor() {
-  // Profile text inputs
-  const firstNameInput = document.getElementById('input-firstname');
-  const lastNameInput  = document.getElementById('input-lastname');
-  const professionInput = document.getElementById('input-profession');
-  const bioInput       = document.getElementById('input-bio');
+let previewController = null;
 
-  // Populate defaults
-  firstNameInput.value  = cardState.firstName;
-  lastNameInput.value   = cardState.lastName;
-  professionInput.value = cardState.profession;
-  bioInput.value        = cardState.bio;
+/**
+ * Cached DOM references.
+ * @type {Record<string, any>}
+ */
+const dom = {};
 
-  const handleTextChange = debounce(() => {
-    cardState.firstName  = firstNameInput.value.trim();
-    cardState.lastName   = lastNameInput.value.trim();
-    cardState.profession = professionInput.value.trim();
-    cardState.bio        = bioInput.value.trim();
+/**
+ * Initializes the full Cardify Creator app.
+ */
+export function initCardifyCreator() {
+  cacheDom();
+  bindThemeToggle();
+  bindMobilePanelToggle();
+  bindIdentityControls();
+  bindSocialControls();
+  bindAppearanceControls();
+  bindTemplateControls();
+
+  previewController = createPreviewController({
+    cardElement: dom.cardPreview,
+    stageElement: dom.previewStage,
+    frameElement: dom.previewFrame,
+    scaleLayerElement: dom.previewScaleLayer,
+    getState: () => state
+  });
+
+  initExportSystem({
+    getState: () => state,
+    getCardElement: () => previewController ? previewController.getCardElement() : dom.cardPreview
+  });
+
+  syncUiFromState();
+  renderStarterTemplates();
+  renderSavedTemplates();
+  renderPreview();
+}
+
+/**
+ * Caches frequently used DOM nodes.
+ */
+function cacheDom() {
+  dom.editorPanel = document.getElementById('editor-panel');
+  dom.mobilePanelToggle = document.getElementById('mobile-panel-toggle');
+  dom.themeToggle = document.getElementById('theme-toggle');
+
+  dom.firstName = document.getElementById('first-name');
+  dom.lastName = document.getElementById('last-name');
+  dom.profession = document.getElementById('profession');
+  dom.bio = document.getElementById('bio');
+
+  dom.profilePhotoInput = document.getElementById('profile-photo');
+  dom.uploadPhotoButton = document.getElementById('upload-photo');
+  dom.removePhotoButton = document.getElementById('remove-photo');
+
+  dom.socialRows = document.getElementById('social-rows');
+  dom.addSocial = document.getElementById('add-social');
+
+  dom.layoutControl = document.getElementById('layout-control');
+  dom.iconStyleControl = document.getElementById('icon-style-control');
+  dom.fontFamily = document.getElementById('font-family');
+  dom.backgroundColor = document.getElementById('background-color');
+  dom.textColor = document.getElementById('text-color');
+  dom.accentColor = document.getElementById('accent-color');
+
+  dom.borderRadius = document.getElementById('border-radius');
+  dom.shadowLevel = document.getElementById('shadow-level');
+  dom.spacingLevel = document.getElementById('spacing-level');
+
+  dom.borderRadiusValue = document.getElementById('border-radius-value');
+  dom.shadowLevelValue = document.getElementById('shadow-level-value');
+  dom.spacingLevelValue = document.getElementById('spacing-level-value');
+
+  dom.starterTemplates = document.getElementById('starter-templates');
+  dom.savedTemplates = document.getElementById('saved-templates');
+  dom.saveTemplate = document.getElementById('save-template');
+  dom.exportTemplates = document.getElementById('export-templates');
+  dom.importTemplates = document.getElementById('import-templates');
+  dom.importTemplatesInput = document.getElementById('import-templates-input');
+
+  dom.previewStage = document.getElementById('preview-stage');
+  dom.previewFrame = document.getElementById('preview-frame');
+  dom.previewScaleLayer = document.getElementById('preview-scale-layer');
+  dom.cardPreview = document.getElementById('card-preview');
+}
+
+/**
+ * Triggers preview redraw if preview controller is active.
+ */
+function renderPreview() {
+  if (previewController) {
+    previewController.render();
+  }
+}
+
+/**
+ * Applies current state values to the editor controls.
+ */
+function syncUiFromState() {
+  dom.firstName.value = state.firstName;
+  dom.lastName.value = state.lastName;
+  dom.profession.value = state.profession;
+  dom.bio.value = state.bio;
+  dom.fontFamily.value = state.fontFamily;
+
+  dom.backgroundColor.value = state.backgroundColor;
+  dom.textColor.value = state.textColor;
+  dom.accentColor.value = state.accentColor;
+
+  dom.borderRadius.value = String(state.borderRadius);
+  dom.shadowLevel.value = String(state.shadowLevel);
+  dom.spacingLevel.value = String(state.spacing);
+
+  dom.borderRadiusValue.textContent = `${state.borderRadius}px`;
+  dom.shadowLevelValue.textContent = SHADOW_LABELS[state.shadowLevel] || SHADOW_LABELS[2];
+  dom.spacingLevelValue.textContent = `${state.spacing}px`;
+
+  setActiveSegment(dom.layoutControl, 'data-layout', state.layout);
+  setActiveSegment(dom.iconStyleControl, 'data-icon-style', state.iconStyle);
+
+  renderSocialRows();
+}
+
+/**
+ * Sets active styling in segmented controls.
+ * @param {HTMLElement} container - Segmented control container.
+ * @param {'data-layout'|'data-icon-style'} attributeName - Segment attribute key.
+ * @param {string} value - Selected value.
+ */
+function setActiveSegment(container, attributeName, value) {
+  container.querySelectorAll('.segment').forEach((segmentButton) => {
+    const isActive = segmentButton.getAttribute(attributeName) === value;
+    segmentButton.classList.toggle('is-active', isActive);
+  });
+}
+
+/**
+ * Normalizes incoming state and applies it to editor + preview.
+ * @param {any} incomingState - Raw template or import state.
+ */
+function applyIncomingState(incomingState) {
+  const normalized = normalizeState(incomingState);
+  state = normalized;
+  syncUiFromState();
+  renderPreview();
+}
+
+/**
+ * Ensures an incoming state object fits the expected schema.
+ * @param {any} incomingState - Raw state candidate.
+ * @returns {any}
+ */
+function normalizeState(incomingState) {
+  const merged = {
+    ...deepClone(BASE_STATE),
+    ...(incomingState || {})
+  };
+
+  merged.firstName = String(merged.firstName || '').slice(0, 80);
+  merged.lastName = String(merged.lastName || '').slice(0, 80);
+  merged.profession = String(merged.profession || '').slice(0, 120);
+  merged.bio = String(merged.bio || '').slice(0, 400);
+
+  merged.backgroundColor = normalizeColor(merged.backgroundColor, BASE_STATE.backgroundColor);
+  merged.textColor = normalizeColor(merged.textColor, BASE_STATE.textColor);
+  merged.accentColor = normalizeColor(merged.accentColor, BASE_STATE.accentColor);
+
+  merged.borderRadius = clampNumber(merged.borderRadius, 0, 48, BASE_STATE.borderRadius);
+  merged.shadowLevel = clampNumber(merged.shadowLevel, 0, 3, BASE_STATE.shadowLevel);
+  merged.spacing = clampNumber(merged.spacing, 12, 42, BASE_STATE.spacing);
+
+  merged.layout = SUPPORTED_LAYOUTS.includes(merged.layout) ? merged.layout : BASE_STATE.layout;
+  merged.iconStyle = SUPPORTED_ICON_STYLES.includes(merged.iconStyle) ? merged.iconStyle : BASE_STATE.iconStyle;
+
+  const validFonts = Array.from(dom.fontFamily.options).map((option) => option.value);
+  merged.fontFamily = validFonts.includes(merged.fontFamily) ? merged.fontFamily : BASE_STATE.fontFamily;
+
+  merged.photoDataUrl = typeof merged.photoDataUrl === 'string' ? merged.photoDataUrl : '';
+
+  merged.socialLinks = normalizeSocialLinks(merged.socialLinks);
+  if (merged.socialLinks.length === 0) {
+    merged.socialLinks = [createEmptySocialLink()];
+  }
+
+  return merged;
+}
+
+/**
+ * Validates and normalizes social link rows.
+ * @param {any} socialLinks - Raw social link list.
+ * @returns {Array<{id: string, platform: string, url: string}>}
+ */
+function normalizeSocialLinks(socialLinks) {
+  if (!Array.isArray(socialLinks)) {
+    return [];
+  }
+
+  return socialLinks
+    .map((link) => {
+      const platform = SOCIAL_NETWORKS.some((network) => network.id === link?.platform)
+        ? link.platform
+        : SOCIAL_NETWORKS[0].id;
+
+      return {
+        id: typeof link?.id === 'string' ? link.id : createId('social'),
+        platform,
+        url: typeof link?.url === 'string' ? link.url : ''
+      };
+    })
+    .slice(0, 12);
+}
+
+/**
+ * Creates a new blank social link model.
+ * @returns {{id: string, platform: string, url: string}}
+ */
+function createEmptySocialLink() {
+  return {
+    id: createId('social'),
+    platform: SOCIAL_NETWORKS[0].id,
+    url: ''
+  };
+}
+
+/**
+ * Normalizes arbitrary color values to #RRGGBB fallback-safe values.
+ * @param {any} value - Untrusted color candidate.
+ * @param {string} fallback - Color fallback.
+ * @returns {string}
+ */
+function normalizeColor(value, fallback) {
+  return /^#[0-9a-fA-F]{6}$/.test(String(value || '')) ? String(value) : fallback;
+}
+
+/**
+ * Clamps a numeric value into an inclusive range.
+ * @param {any} value - Raw number candidate.
+ * @param {number} min - Minimum allowed value.
+ * @param {number} max - Maximum allowed value.
+ * @param {number} fallback - Fallback if value is invalid.
+ * @returns {number}
+ */
+function clampNumber(value, min, max, fallback) {
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, Math.round(numericValue)));
+}
+
+/**
+ * Binds theme toggle behavior and persisted preference.
+ */
+function bindThemeToggle() {
+  const documentElement = document.documentElement;
+  const persistedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  const initialTheme = persistedTheme === 'dark' ? 'dark' : 'light';
+
+  documentElement.setAttribute('data-ui-theme', initialTheme);
+  dom.themeToggle.textContent = initialTheme === 'dark' ? 'Light' : 'Dark';
+
+  dom.themeToggle.addEventListener('click', () => {
+    const currentTheme = documentElement.getAttribute('data-ui-theme') === 'dark' ? 'dark' : 'light';
+    const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    documentElement.setAttribute('data-ui-theme', nextTheme);
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    dom.themeToggle.textContent = nextTheme === 'dark' ? 'Light' : 'Dark';
+  });
+}
+
+/**
+ * Binds mobile editor panel open/close logic.
+ */
+function bindMobilePanelToggle() {
+  dom.mobilePanelToggle.addEventListener('click', () => {
+    dom.editorPanel.classList.toggle('mobile-open');
+  });
+
+  dom.previewStage.addEventListener('click', () => {
+    if (window.innerWidth <= 980) {
+      dom.editorPanel.classList.remove('mobile-open');
+    }
+  });
+}
+
+/**
+ * Binds profile text and photo controls.
+ */
+function bindIdentityControls() {
+  const syncIdentity = debounce(() => {
+    state.firstName = dom.firstName.value;
+    state.lastName = dom.lastName.value;
+    state.profession = dom.profession.value;
+    state.bio = dom.bio.value;
     renderPreview();
-  }, 80);
+  }, 45);
 
-  firstNameInput.addEventListener('input', handleTextChange);
-  lastNameInput.addEventListener('input', handleTextChange);
-  professionInput.addEventListener('input', handleTextChange);
-  bioInput.addEventListener('input', handleTextChange);
+  dom.firstName.addEventListener('input', syncIdentity);
+  dom.lastName.addEventListener('input', syncIdentity);
+  dom.profession.addEventListener('input', syncIdentity);
+  dom.bio.addEventListener('input', syncIdentity);
 
-  // Photo upload
-  const photoInput   = document.getElementById('input-photo');
-  const removePhoto  = document.getElementById('remove-photo');
+  dom.uploadPhotoButton.addEventListener('click', () => {
+    dom.profilePhotoInput.click();
+  });
 
-  photoInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      showToast('Please select an image file.', 'error');
+  dom.profilePhotoInput.addEventListener('change', async () => {
+    const file = dom.profilePhotoInput.files?.[0];
+    if (!file) {
       return;
     }
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please choose an image file.', 'error');
+      return;
+    }
+
     try {
-      cardState.photo = await fileToBase64(file);
-      removePhoto.style.display = '';
+      state.photoDataUrl = await readFileAsDataUrl(file);
       renderPreview();
-      showToast('Photo uploaded!', 'success');
-    } catch {
-      showToast('Failed to load image.', 'error');
+      showToast('Profile photo updated.');
+    } catch (error) {
+      console.error(error);
+      showToast('Photo upload failed.', 'error');
     }
   });
 
-  removePhoto.addEventListener('click', () => {
-    cardState.photo = null;
-    photoInput.value = '';
-    removePhoto.style.display = 'none';
+  dom.removePhotoButton.addEventListener('click', () => {
+    state.photoDataUrl = '';
+    dom.profilePhotoInput.value = '';
     renderPreview();
-    showToast('Photo removed.', 'info');
+    showToast('Profile photo removed.');
+  });
+}
+
+/**
+ * Binds social link editor behavior.
+ */
+function bindSocialControls() {
+  dom.addSocial.addEventListener('click', () => {
+    state.socialLinks.push(createEmptySocialLink());
+    renderSocialRows();
+    renderPreview();
   });
 
-  // Social links
-  document.getElementById('add-social-link').addEventListener('click', () => {
-    addSocialLinkRow(null);
+  dom.socialRows.addEventListener('change', (event) => {
+    const target = /** @type {HTMLElement} */ (event.target);
+    const row = target.closest('.social-row');
+    if (!row) {
+      return;
+    }
+
+    const linkId = row.getAttribute('data-link-id');
+    const link = state.socialLinks.find((entry) => entry.id === linkId);
+    if (!link) {
+      return;
+    }
+
+    if (target instanceof HTMLSelectElement) {
+      link.platform = target.value;
+      const urlInput = /** @type {HTMLInputElement | null} */ (row.querySelector('input[type="url"]'));
+      const network = SOCIAL_NETWORKS.find((entry) => entry.id === link.platform) || SOCIAL_NETWORKS[0];
+      if (urlInput) {
+        urlInput.placeholder = network.placeholder;
+      }
+    }
+
+    if (target instanceof HTMLInputElement) {
+      link.url = target.value;
+    }
+
+    renderPreview();
   });
 
-  // Appearance — layout
-  document.querySelectorAll('.layout-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      cardState.layout = btn.dataset.layout;
-      renderPreview();
+  dom.socialRows.addEventListener('input', (event) => {
+    const target = /** @type {HTMLElement} */ (event.target);
+    if (!(target instanceof HTMLInputElement) || target.type !== 'url') {
+      return;
+    }
+
+    const row = target.closest('.social-row');
+    if (!row) {
+      return;
+    }
+
+    const linkId = row.getAttribute('data-link-id');
+    const link = state.socialLinks.find((entry) => entry.id === linkId);
+    if (!link) {
+      return;
+    }
+
+    link.url = target.value;
+    renderPreview();
+  });
+
+  dom.socialRows.addEventListener('click', (event) => {
+    const target = /** @type {HTMLElement} */ (event.target);
+    const removeButton = target.closest('.social-remove');
+    if (!removeButton) {
+      return;
+    }
+
+    const row = removeButton.closest('.social-row');
+    const linkId = row?.getAttribute('data-link-id');
+    if (!linkId) {
+      return;
+    }
+
+    state.socialLinks = state.socialLinks.filter((link) => link.id !== linkId);
+    if (state.socialLinks.length === 0) {
+      state.socialLinks.push(createEmptySocialLink());
+    }
+
+    renderSocialRows();
+    renderPreview();
+  });
+}
+
+/**
+ * Renders social link rows into the editor panel.
+ */
+function renderSocialRows() {
+  dom.socialRows.innerHTML = '';
+
+  state.socialLinks.forEach((link) => {
+    const row = document.createElement('div');
+    const platformSelect = document.createElement('select');
+    const urlInput = document.createElement('input');
+    const removeButton = document.createElement('button');
+
+    row.className = 'social-row';
+    row.setAttribute('data-link-id', link.id);
+
+    SOCIAL_NETWORKS.forEach((network) => {
+      const option = document.createElement('option');
+      option.value = network.id;
+      option.textContent = network.label;
+      option.selected = network.id === link.platform;
+      platformSelect.append(option);
     });
-  });
+    platformSelect.className = 'field-input';
 
-  // Appearance — colors
-  const accentInput = document.getElementById('color-accent');
-  const bgInput     = document.getElementById('color-bg');
-  const textInput   = document.getElementById('color-text');
+    const selectedNetwork = SOCIAL_NETWORKS.find((network) => network.id === link.platform) || SOCIAL_NETWORKS[0];
 
-  accentInput.value = cardState.accentColor;
-  bgInput.value     = cardState.bgColor;
-  textInput.value   = cardState.textColor;
+    urlInput.type = 'url';
+    urlInput.className = 'field-input';
+    urlInput.placeholder = selectedNetwork.placeholder;
+    urlInput.value = link.url;
 
-  accentInput.addEventListener('input', () => {
-    cardState.accentColor = accentInput.value;
-    renderPreview();
-  });
-  bgInput.addEventListener('input', () => {
-    cardState.bgColor = bgInput.value;
-    renderPreview();
-  });
-  textInput.addEventListener('input', () => {
-    cardState.textColor = textInput.value;
-    renderPreview();
-  });
+    removeButton.type = 'button';
+    removeButton.className = 'social-remove';
+    removeButton.textContent = '×';
+    removeButton.title = 'Remove social link';
 
-  // Appearance — font
-  const fontSelect = document.getElementById('font-select');
-  fontSelect.value = cardState.font;
-  fontSelect.addEventListener('change', () => {
-    cardState.font = fontSelect.value;
-    renderPreview();
+    row.append(platformSelect, urlInput, removeButton);
+    dom.socialRows.append(row);
   });
+}
 
-  // Appearance — border radius
-  const radiusRange = document.getElementById('border-radius');
-  const radiusVal   = document.getElementById('border-radius-val');
-  radiusRange.value = cardState.borderRadius;
-  radiusVal.textContent = cardState.borderRadius;
-  radiusRange.addEventListener('input', () => {
-    cardState.borderRadius = parseInt(radiusRange.value, 10);
-    radiusVal.textContent = cardState.borderRadius;
+/**
+ * Binds appearance controls for layout, colors, font, spacing, and depth.
+ */
+function bindAppearanceControls() {
+  dom.layoutControl.addEventListener('click', (event) => {
+    const target = /** @type {HTMLElement} */ (event.target);
+    const segment = target.closest('[data-layout]');
+    if (!segment) {
+      return;
+    }
+
+    const layout = segment.getAttribute('data-layout');
+    if (!layout || !SUPPORTED_LAYOUTS.includes(layout)) {
+      return;
+    }
+
+    state.layout = layout;
+    setActiveSegment(dom.layoutControl, 'data-layout', layout);
     renderPreview();
   });
 
-  // Appearance — shadow
-  const shadowRange = document.getElementById('shadow-intensity');
-  const shadowVal   = document.getElementById('shadow-intensity-val');
-  const shadowLabels = ['none', 'small', 'medium', 'large'];
-  shadowRange.value = cardState.shadowLevel;
-  shadowVal.textContent = shadowLabels[cardState.shadowLevel] || 'medium';
-  shadowRange.addEventListener('input', () => {
-    cardState.shadowLevel = parseInt(shadowRange.value, 10);
-    shadowVal.textContent = shadowLabels[cardState.shadowLevel] || 'medium';
+  dom.iconStyleControl.addEventListener('click', (event) => {
+    const target = /** @type {HTMLElement} */ (event.target);
+    const segment = target.closest('[data-icon-style]');
+    if (!segment) {
+      return;
+    }
+
+    const iconStyle = segment.getAttribute('data-icon-style');
+    if (!iconStyle || !SUPPORTED_ICON_STYLES.includes(iconStyle)) {
+      return;
+    }
+
+    state.iconStyle = iconStyle;
+    setActiveSegment(dom.iconStyleControl, 'data-icon-style', iconStyle);
     renderPreview();
   });
 
-  // Appearance — icon style
-  document.querySelectorAll('.icon-style-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.icon-style-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      cardState.iconStyle = btn.dataset.style;
-      renderPreview();
+  dom.fontFamily.addEventListener('change', () => {
+    state.fontFamily = dom.fontFamily.value;
+    renderPreview();
+  });
+
+  dom.backgroundColor.addEventListener('input', () => {
+    state.backgroundColor = dom.backgroundColor.value;
+    renderPreview();
+  });
+
+  dom.textColor.addEventListener('input', () => {
+    state.textColor = dom.textColor.value;
+    renderPreview();
+  });
+
+  dom.accentColor.addEventListener('input', () => {
+    state.accentColor = dom.accentColor.value;
+    renderPreview();
+  });
+
+  dom.borderRadius.addEventListener('input', () => {
+    state.borderRadius = clampNumber(dom.borderRadius.value, 0, 48, BASE_STATE.borderRadius);
+    dom.borderRadiusValue.textContent = `${state.borderRadius}px`;
+    renderPreview();
+  });
+
+  dom.shadowLevel.addEventListener('input', () => {
+    state.shadowLevel = clampNumber(dom.shadowLevel.value, 0, 3, BASE_STATE.shadowLevel);
+    dom.shadowLevelValue.textContent = SHADOW_LABELS[state.shadowLevel] || SHADOW_LABELS[2];
+    renderPreview();
+  });
+
+  dom.spacingLevel.addEventListener('input', () => {
+    state.spacing = clampNumber(dom.spacingLevel.value, 12, 42, BASE_STATE.spacing);
+    dom.spacingLevelValue.textContent = `${state.spacing}px`;
+    renderPreview();
+  });
+}
+
+/**
+ * Binds template save/load/import/export controls.
+ */
+function bindTemplateControls() {
+  dom.saveTemplate.addEventListener('click', () => {
+    const nameInput = window.prompt('Template name', `${state.firstName} ${state.lastName}`.trim() || 'My Template');
+    if (nameInput === null) {
+      return;
+    }
+
+    const name = (nameInput.trim() || 'My Template').slice(0, 60);
+    saveTemplateSnapshot(name, state);
+    renderSavedTemplates();
+    showToast('Template saved.');
+  });
+
+  dom.exportTemplates.addEventListener('click', () => {
+    const payload = buildTemplateExportPayload(getSavedTemplates());
+    downloadText(
+      JSON.stringify(payload, null, 2),
+      'cardify-templates.json',
+      'application/json;charset=utf-8'
+    );
+    showToast('Template pack exported.');
+  });
+
+  dom.importTemplates.addEventListener('click', () => {
+    dom.importTemplatesInput.click();
+  });
+
+  dom.importTemplatesInput.addEventListener('change', async () => {
+    const file = dom.importTemplatesInput.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      const rawText = await file.text();
+      const importedPayload = parseTemplateImportPayload(rawText);
+      const normalizedImports = importedPayload
+        .map((entry, index) => normalizeImportedTemplate(entry, index))
+        .filter(Boolean);
+
+      const mergedTemplates = [...normalizedImports, ...getSavedTemplates()];
+      setSavedTemplates(mergedTemplates);
+      renderSavedTemplates();
+      showToast(`Imported ${normalizedImports.length} template(s).`);
+    } catch (error) {
+      console.error(error);
+      showToast('Template import failed.', 'error');
+    } finally {
+      dom.importTemplatesInput.value = '';
+    }
+  });
+}
+
+/**
+ * Normalizes imported template entry shape.
+ * @param {any} entry - Imported template candidate.
+ * @param {number} index - Entry index for fallback naming.
+ * @returns {{id: string, name: string, badge: string, state: object} | null}
+ */
+function normalizeImportedTemplate(entry, index) {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+
+  const stateCandidate = entry.state || entry;
+  const normalizedState = normalizeState(stateCandidate);
+
+  return {
+    id: typeof entry.id === 'string' ? entry.id : createId('imported'),
+    name: String(entry.name || `Imported Template ${index + 1}`).slice(0, 60),
+    badge: typeof entry.badge === 'string' ? entry.badge : '📥',
+    state: normalizedState
+  };
+}
+
+/**
+ * Renders built-in starter template cards.
+ */
+function renderStarterTemplates() {
+  dom.starterTemplates.innerHTML = '';
+
+  DEFAULT_TEMPLATES.forEach((template) => {
+    const card = createTemplateCard(template, false);
+    dom.starterTemplates.append(card);
+  });
+}
+
+/**
+ * Renders user-saved template cards.
+ */
+function renderSavedTemplates() {
+  const savedTemplates = getSavedTemplates();
+  dom.savedTemplates.innerHTML = '';
+
+  if (savedTemplates.length === 0) {
+    const emptyMessage = document.createElement('p');
+    emptyMessage.className = 'template-empty';
+    emptyMessage.textContent = 'No saved templates yet.';
+    dom.savedTemplates.append(emptyMessage);
+    return;
+  }
+
+  savedTemplates.forEach((template) => {
+    const card = createTemplateCard(template, true);
+    dom.savedTemplates.append(card);
+  });
+}
+
+/**
+ * Creates a clickable template card element.
+ * @param {{id: string, name: string, badge: string, state: object}} template - Template data.
+ * @param {boolean} isDeletable - Whether delete action should be available.
+ * @returns {HTMLElement}
+ */
+function createTemplateCard(template, isDeletable) {
+  const card = document.createElement('button');
+  const badge = document.createElement('div');
+  const name = document.createElement('div');
+
+  card.type = 'button';
+  card.className = 'template-card';
+  card.title = template.name;
+
+  badge.className = 'template-thumb';
+  badge.textContent = template.badge;
+
+  name.className = 'template-name';
+  name.textContent = template.name;
+
+  card.append(badge, name);
+
+  card.addEventListener('click', () => {
+    applyIncomingState(template.state);
+    showToast(`Loaded template: ${template.name}`);
+  });
+
+  if (isDeletable) {
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'template-delete';
+    deleteButton.textContent = '×';
+    deleteButton.title = 'Delete template';
+
+    deleteButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      deleteSavedTemplate(template.id);
+      renderSavedTemplates();
+      showToast('Template deleted.');
     });
-  });
-}
 
-/**
- * Adds a new social link row to the editor UI.
- * @param {{id: string, platform: string, url: string}|null} linkData
- */
-function addSocialLinkRow(linkData) {
-  const id       = (linkData && linkData.id) ? linkData.id : generateId();
-  const platform = (linkData && linkData.platform) ? linkData.platform : 'facebook';
-  const url      = (linkData && linkData.url) ? linkData.url : '';
-
-  if (!linkData) {
-    cardState.socialLinks.push({ id, platform, url });
+    card.append(deleteButton);
   }
 
-  const container = document.getElementById('social-links-editor');
-
-  const row = document.createElement('div');
-  row.className = 'social-link-row';
-  row.dataset.id = id;
-
-  // Platform select
-  const select = document.createElement('select');
-  Object.entries(SOCIAL_PLATFORMS).forEach(([key, info]) => {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = info.label;
-    if (key === platform) opt.selected = true;
-    select.appendChild(opt);
-  });
-
-  // URL input
-  const input = document.createElement('input');
-  input.type = 'url';
-  input.placeholder = 'https://...';
-  input.value = url;
-
-  // Remove button
-  const removeBtn = document.createElement('button');
-  removeBtn.className = 'social-link-remove';
-  removeBtn.innerHTML = '✕';
-  removeBtn.title = 'Remove';
-
-  removeBtn.addEventListener('click', () => {
-    removeSocialLinkRow(id);
-  });
-
-  select.addEventListener('change', () => {
-    const link = cardState.socialLinks.find(l => l.id === id);
-    if (link) link.platform = select.value;
-    renderPreview();
-  });
-
-  input.addEventListener('input', debounce(() => {
-    const link = cardState.socialLinks.find(l => l.id === id);
-    if (link) link.url = input.value.trim();
-    renderPreview();
-  }, 200));
-
-  row.appendChild(select);
-  row.appendChild(input);
-  row.appendChild(removeBtn);
-  container.appendChild(row);
-
-  renderPreview();
+  return card;
 }
-
-/**
- * Removes a social link row by ID.
- * @param {string} id
- */
-function removeSocialLinkRow(id) {
-  cardState.socialLinks = cardState.socialLinks.filter(l => l.id !== id);
-  const row = document.querySelector(`.social-link-row[data-id="${id}"]`);
-  if (row) row.remove();
-  renderPreview();
-}
-
-/**
- * Populates the editor form from a state object (used when loading templates).
- * @param {Object} state
- */
-function loadStateIntoEditor(state) {
-  // Copy state properties
-  Object.assign(cardState, JSON.parse(JSON.stringify(state)));
-  window.cardState = cardState;
-
-  // Repopulate form fields
-  document.getElementById('input-firstname').value  = cardState.firstName || '';
-  document.getElementById('input-lastname').value   = cardState.lastName  || '';
-  document.getElementById('input-profession').value = cardState.profession || '';
-  document.getElementById('input-bio').value        = cardState.bio || '';
-
-  // Photo
-  const removePhoto = document.getElementById('remove-photo');
-  if (cardState.photo) {
-    removePhoto.style.display = '';
-  } else {
-    removePhoto.style.display = 'none';
-    document.getElementById('input-photo').value = '';
-  }
-
-  // Colors
-  document.getElementById('color-accent').value = cardState.accentColor || '#4070f4';
-  document.getElementById('color-bg').value     = cardState.bgColor     || '#ffffff';
-  document.getElementById('color-text').value   = cardState.textColor   || '#333333';
-
-  // Font
-  const fontSelect = document.getElementById('font-select');
-  fontSelect.value = cardState.font || 'Poppins';
-
-  // Border radius
-  const radiusRange = document.getElementById('border-radius');
-  const radiusVal   = document.getElementById('border-radius-val');
-  radiusRange.value = cardState.borderRadius !== undefined ? cardState.borderRadius : 24;
-  radiusVal.textContent = radiusRange.value;
-
-  // Shadow
-  const shadowRange  = document.getElementById('shadow-intensity');
-  const shadowVal    = document.getElementById('shadow-intensity-val');
-  const shadowLabels = ['none', 'small', 'medium', 'large'];
-  shadowRange.value = cardState.shadowLevel !== undefined ? cardState.shadowLevel : 1;
-  shadowVal.textContent = shadowLabels[parseInt(shadowRange.value, 10)] || 'medium';
-
-  // Layout buttons
-  document.querySelectorAll('.layout-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.layout === cardState.layout);
-  });
-
-  // Icon style buttons
-  document.querySelectorAll('.icon-style-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.style === cardState.iconStyle);
-  });
-
-  // Clear and re-render social link rows
-  const container = document.getElementById('social-links-editor');
-  container.innerHTML = '';
-  if (Array.isArray(cardState.socialLinks)) {
-    cardState.socialLinks.forEach(link => addSocialLinkRow(link));
-  }
-
-  renderPreview();
-}
-
-window.loadStateIntoEditor = loadStateIntoEditor;
-window.addSocialLinkRow    = addSocialLinkRow;
-window.removeSocialLinkRow = removeSocialLinkRow;
-window.initEditor          = initEditor;

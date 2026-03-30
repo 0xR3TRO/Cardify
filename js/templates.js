@@ -1,208 +1,205 @@
 /**
  * templates.js
- * Manages saving/loading card templates.
- * Persists user templates to localStorage.
- * Provides 3 built-in starter templates.
+ * Default templates and localStorage persistence for user-created card templates.
  */
 
-const STORAGE_KEY = 'cardify_templates';
+import { createId, deepClone } from './utils.js';
 
 /**
- * Built-in starter templates — Minimal, Modern, Bold.
+ * localStorage key used for persisted custom templates.
+ * @type {string}
  */
-const DEFAULT_TEMPLATES = [
+const STORAGE_KEY = 'cardify.creator.templates.v1';
+
+/**
+ * Built-in starter templates available in every session.
+ * @type {Array<{id: string, name: string, badge: string, state: object}>}
+ */
+export const DEFAULT_TEMPLATES = [
   {
-    id: 'minimal',
+    id: 'starter_minimal',
     name: 'Minimal',
-    thumbnail: '⬜',
+    badge: '⬜',
     state: {
-      firstName: 'Alex', lastName: 'Morgan',
-      profession: 'Product Designer',
-      bio: 'Designing experiences that matter.',
-      photo: null,
-      socialLinks: [],
-      layout: 'vertical',
-      accentColor: '#374151', bgColor: '#f9fafb', textColor: '#111827',
-      font: 'Inter', borderRadius: 8, shadowLevel: 1, iconStyle: 'minimal',
-    },
-  },
-  {
-    id: 'modern',
-    name: 'Modern',
-    thumbnail: '🟦',
-    state: {
-      firstName: 'Sam', lastName: 'Chen',
-      profession: 'Full-Stack Developer',
-      bio: 'Building the future, one commit at a time.',
-      photo: null,
-      socialLinks: [{ id: 'tpl-modern-1', platform: 'github', url: 'https://github.com' }],
-      layout: 'vertical',
-      accentColor: '#0ea5e9', bgColor: '#0f172a', textColor: '#e2e8f0',
-      font: 'Montserrat', borderRadius: 20, shadowLevel: 2, iconStyle: 'filled',
-    },
-  },
-  {
-    id: 'bold',
-    name: 'Bold',
-    thumbnail: '🟣',
-    state: {
-      firstName: 'Jordan', lastName: 'Rivera',
-      profession: 'Creative Director',
-      bio: 'Vision + Craft = Magic.',
-      photo: null,
+      firstName: 'Nina',
+      lastName: 'Park',
+      profession: 'UI Designer',
+      bio: 'Designing clear, practical interfaces for complex products.',
+      photoDataUrl: '',
       socialLinks: [
-        { id: 'tpl-bold-1', platform: 'instagram', url: 'https://instagram.com' },
-        { id: 'tpl-bold-2', platform: 'linkedin',  url: 'https://linkedin.com'  },
+        { id: 'minimal_linkedin', platform: 'linkedin', url: 'https://linkedin.com' }
+      ],
+      layout: 'vertical',
+      iconStyle: 'minimal',
+      fontFamily: 'Manrope',
+      backgroundColor: '#f7fbff',
+      textColor: '#182334',
+      accentColor: '#1d4ed8',
+      borderRadius: 12,
+      shadowLevel: 1,
+      spacing: 20
+    }
+  },
+  {
+    id: 'starter_modern',
+    name: 'Modern',
+    badge: '🟦',
+    state: {
+      firstName: 'Leo',
+      lastName: 'Gomez',
+      profession: 'Full-Stack Developer',
+      bio: 'Shipping maintainable products from API layer to polished UI.',
+      photoDataUrl: '',
+      socialLinks: [
+        { id: 'modern_github', platform: 'github', url: 'https://github.com' },
+        { id: 'modern_linkedin', platform: 'linkedin', url: 'https://linkedin.com' }
       ],
       layout: 'horizontal',
-      accentColor: '#7c3aed', bgColor: '#1e1b4b', textColor: '#ede9fe',
-      font: 'Playfair Display', borderRadius: 16, shadowLevel: 3, iconStyle: 'filled',
-    },
+      iconStyle: 'filled',
+      fontFamily: 'Space Grotesk',
+      backgroundColor: '#f3f9ff',
+      textColor: '#12263a',
+      accentColor: '#0ea5e9',
+      borderRadius: 20,
+      shadowLevel: 2,
+      spacing: 24
+    }
   },
+  {
+    id: 'starter_bold',
+    name: 'Bold',
+    badge: '🟠',
+    state: {
+      firstName: 'Ari',
+      lastName: 'Hunter',
+      profession: 'Creative Director',
+      bio: 'Building memorable campaigns and product stories with visual edge.',
+      photoDataUrl: '',
+      socialLinks: [
+        { id: 'bold_instagram', platform: 'instagram', url: 'https://instagram.com' },
+        { id: 'bold_tiktok', platform: 'tiktok', url: 'https://tiktok.com' }
+      ],
+      layout: 'horizontal',
+      iconStyle: 'outline',
+      fontFamily: 'Sora',
+      backgroundColor: '#fff8f1',
+      textColor: '#2e2013',
+      accentColor: '#f97316',
+      borderRadius: 28,
+      shadowLevel: 3,
+      spacing: 26
+    }
+  },
+  {
+    id: 'starter_elegant',
+    name: 'Elegant',
+    badge: '✨',
+    state: {
+      firstName: 'Clara',
+      lastName: 'Voss',
+      profession: 'Brand Strategist',
+      bio: 'Crafting premium narratives and identity systems for ambitious teams.',
+      photoDataUrl: '',
+      socialLinks: [
+        { id: 'elegant_linkedin', platform: 'linkedin', url: 'https://linkedin.com' },
+        { id: 'elegant_youtube', platform: 'youtube', url: 'https://youtube.com' }
+      ],
+      layout: 'compact',
+      iconStyle: 'minimal',
+      fontFamily: 'Playfair Display',
+      backgroundColor: '#fffdf8',
+      textColor: '#2f2a25',
+      accentColor: '#b7791f',
+      borderRadius: 18,
+      shadowLevel: 2,
+      spacing: 22
+    }
+  }
 ];
 
-/** Thumbnail emojis cycled when saving new user templates. */
-const TEMPLATE_THUMBNAIL_EMOJIS = ['🔵','🟢','🟠','🟡','🔴','🟤','⚫','⚪'];
-
 /**
- * Loads user-saved templates from localStorage.
- * @returns {Array}
+ * Loads persisted templates from localStorage.
+ * @returns {Array<{id: string, name: string, badge: string, state: object}>}
  */
-function getSavedTemplates() {
+export function getSavedTemplates() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
 /**
- * Saves a new template to localStorage.
- * @param {string} name
- * @param {Object} state
+ * Writes persisted templates to localStorage.
+ * @param {Array<{id: string, name: string, badge: string, state: object}>} templates - Templates to persist.
  */
-function saveTemplate(name, state) {
-  const templates = getSavedTemplates();
-  const id        = generateId();
-  const thumb     = TEMPLATE_THUMBNAIL_EMOJIS[templates.length % TEMPLATE_THUMBNAIL_EMOJIS.length];
-  templates.push({
-    id,
-    name: name || 'My Template',
-    thumbnail: thumb,
-    state: JSON.parse(JSON.stringify(state)),
-  });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
-  return id;
-}
-
-/**
- * Deletes a saved template by ID.
- * @param {string} id
- */
-function deleteTemplate(id) {
-  const templates = getSavedTemplates().filter(t => t.id !== id);
+export function setSavedTemplates(templates) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
 }
 
 /**
- * Creates and returns a template card DOM element.
- * @param {Object} tpl  - { id, name, thumbnail, state }
- * @param {boolean} deletable - whether to show a delete button
- * @returns {HTMLElement}
+ * Creates and persists a new user template snapshot.
+ * @param {string} name - User label for the template.
+ * @param {object} state - Current editor state snapshot.
+ * @returns {{id: string, name: string, badge: string, state: object}}
  */
-function createTemplateCardEl(tpl, deletable) {
-  const card = document.createElement('div');
-  card.className = 'template-card';
-  card.title = tpl.name;
+export function saveTemplateSnapshot(name, state) {
+  const savedTemplates = getSavedTemplates();
+  const template = {
+    id: createId('template'),
+    name,
+    badge: '💾',
+    state: deepClone(state)
+  };
 
-  const thumb = document.createElement('span');
-  thumb.className = 'template-thumb';
-  thumb.textContent = tpl.thumbnail || '📋';
-
-  const nameEl = document.createElement('span');
-  nameEl.className = 'template-name';
-  nameEl.textContent = tpl.name;
-
-  card.appendChild(thumb);
-  card.appendChild(nameEl);
-
-  if (deletable) {
-    const delBtn = document.createElement('button');
-    delBtn.className = 'template-delete';
-    delBtn.innerHTML = '✕';
-    delBtn.title = 'Delete template';
-    delBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteTemplate(tpl.id);
-      renderSavedTemplates();
-      showToast('Template deleted.', 'info');
-    });
-    card.appendChild(delBtn);
-  }
-
-  card.addEventListener('click', () => {
-    loadStateIntoEditor(tpl.state);
-    showToast(`Template "${tpl.name}" loaded!`, 'success');
-  });
-
-  return card;
+  savedTemplates.unshift(template);
+  setSavedTemplates(savedTemplates);
+  return template;
 }
 
 /**
- * Renders the starter template cards in the UI.
+ * Removes a persisted template by identifier.
+ * @param {string} templateId - Template identifier.
  */
-function renderStarterTemplates() {
-  const container = document.getElementById('starter-templates');
-  if (!container) return;
-  container.innerHTML = '';
-  DEFAULT_TEMPLATES.forEach(tpl => {
-    container.appendChild(createTemplateCardEl(tpl, false));
-  });
+export function deleteSavedTemplate(templateId) {
+  const filtered = getSavedTemplates().filter((template) => template.id !== templateId);
+  setSavedTemplates(filtered);
 }
 
 /**
- * Renders the user-saved template cards in the UI.
+ * Builds a serializable payload for template export.
+ * @param {Array<{id: string, name: string, badge: string, state: object}>} templates - Templates to export.
+ * @returns {{version: number, exportedAt: string, templates: Array<{id: string, name: string, badge: string, state: object}>}}
  */
-function renderSavedTemplates() {
-  const container = document.getElementById('saved-templates');
-  if (!container) return;
-  container.innerHTML = '';
-  const saved = getSavedTemplates();
-  if (saved.length === 0) {
-    const empty = document.createElement('p');
-    empty.style.cssText = 'font-size:0.78rem;color:var(--text-secondary);font-style:italic;';
-    empty.textContent = 'No saved templates yet.';
-    container.appendChild(empty);
-    return;
-  }
-  saved.forEach(tpl => {
-    container.appendChild(createTemplateCardEl(tpl, true));
-  });
+export function buildTemplateExportPayload(templates) {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    templates: deepClone(templates)
+  };
 }
 
 /**
- * Initializes the template system and renders all template UI.
+ * Parses and validates imported templates payload.
+ * @param {string} fileText - Raw JSON text from upload.
+ * @returns {Array<{id: string, name: string, badge: string, state: object}>}
  */
-function initTemplates() {
-  renderStarterTemplates();
-  renderSavedTemplates();
+export function parseTemplateImportPayload(fileText) {
+  const parsed = JSON.parse(fileText);
 
-  const saveBtn = document.getElementById('save-template-btn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-      const name = prompt('Enter a name for this template:', 'My Card');
-      if (name === null) return; // user cancelled
-      saveTemplate(name.trim() || 'My Card', window.cardState);
-      renderSavedTemplates();
-      showToast('Template saved!', 'success');
-    });
+  if (Array.isArray(parsed)) {
+    return parsed;
   }
-}
 
-window.initTemplates        = initTemplates;
-window.renderStarterTemplates = renderStarterTemplates;
-window.renderSavedTemplates   = renderSavedTemplates;
-window.getSavedTemplates      = getSavedTemplates;
-window.saveTemplate           = saveTemplate;
-window.deleteTemplate         = deleteTemplate;
+  if (parsed && Array.isArray(parsed.templates)) {
+    return parsed.templates;
+  }
+
+  throw new Error('Invalid template payload.');
+}

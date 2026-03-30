@@ -1,207 +1,186 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-ui-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cardify Creator</title>
-  <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
-  <!-- Export libraries bundled locally to avoid CDN dependency -->
-  <script src="assets/libs/html2canvas.min.js"></script>
-  <script src="assets/libs/jspdf.umd.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="app-header">
-    <div class="app-logo">
-      <span class="logo-icon">✦</span>
-      <span class="logo-text">Cardify <span class="accent">Creator</span></span>
+    <div class="brand-block">
+      <span class="brand-mark" aria-hidden="true">◈</span>
+      <div>
+        <p class="brand-kicker">Digital Personal Card Builder</p>
+        <h1 class="brand-title">Cardify Creator</h1>
+      </div>
     </div>
     <div class="header-actions">
-      <button id="theme-toggle" class="icon-btn" title="Toggle dark/light mode">🌙</button>
-      <button id="mobile-toggle" class="icon-btn" title="Toggle editor">☰</button>
+      <button type="button" class="icon-button" id="theme-toggle" aria-label="Toggle light and dark mode">
+        Dark
+      </button>
+      <button type="button" class="icon-button mobile-only" id="mobile-panel-toggle" aria-label="Toggle editor panel">
+        Editor
+      </button>
     </div>
   </header>
 
-  <main class="app-main">
-    <!-- LEFT: Editor Panel -->
-    <aside class="editor-panel" id="editor-panel">
-      <div class="panel-sections">
+  <main class="app-shell">
+    <aside class="editor-panel" id="editor-panel" aria-label="Card editor">
+      <form id="cardify-form" class="editor-form" autocomplete="off">
+        <details class="panel-block" open>
+          <summary class="panel-title">Identity</summary>
+          <div class="panel-content">
+            <label class="field-label" for="first-name">First Name</label>
+            <input class="field-input" type="text" id="first-name" placeholder="Avery" />
 
-        <!-- Section: Profile Info -->
-        <section class="editor-section" id="section-profile">
-          <div class="section-header">
-            <h3>👤 Profile Info</h3>
-            <button class="collapse-btn">▼</button>
-          </div>
-          <div class="section-content">
-            <div class="form-group">
-              <label for="input-firstname">First Name</label>
-              <input type="text" id="input-firstname" placeholder="John" />
-            </div>
-            <div class="form-group">
-              <label for="input-lastname">Last Name</label>
-              <input type="text" id="input-lastname" placeholder="Doe" />
-            </div>
-            <div class="form-group">
-              <label for="input-profession">Profession</label>
-              <input type="text" id="input-profession" placeholder="UI/UX Designer" />
-            </div>
-            <div class="form-group">
-              <label for="input-bio">Short Bio</label>
-              <textarea id="input-bio" rows="3" placeholder="A short description about yourself..."></textarea>
-            </div>
-            <div class="form-group">
-              <label for="input-photo">Profile Photo</label>
-              <div class="photo-upload">
-                <input type="file" id="input-photo" accept="image/*" />
-                <label for="input-photo" class="upload-btn">📷 Upload Photo</label>
-                <button id="remove-photo" class="remove-btn" style="display:none">✕ Remove</button>
+            <label class="field-label" for="last-name">Last Name</label>
+            <input class="field-input" type="text" id="last-name" placeholder="Stone" />
+
+            <label class="field-label" for="profession">Profession</label>
+            <input class="field-input" type="text" id="profession" placeholder="Product Engineer" />
+
+            <label class="field-label" for="bio">Bio</label>
+            <textarea class="field-input field-textarea" id="bio" rows="4" placeholder="Short profile summary"></textarea>
+
+            <div class="photo-row">
+              <label class="field-label" for="profile-photo">Profile Photo</label>
+              <input type="file" id="profile-photo" accept="image/*" hidden />
+              <div class="photo-actions">
+                <button type="button" class="secondary-button" id="upload-photo">Upload</button>
+                <button type="button" class="secondary-button" id="remove-photo">Remove</button>
               </div>
             </div>
           </div>
-        </section>
+        </details>
 
-        <!-- Section: Social Links -->
-        <section class="editor-section" id="section-social">
-          <div class="section-header">
-            <h3>🔗 Social Links</h3>
-            <button class="collapse-btn">▼</button>
+        <details class="panel-block" open>
+          <summary class="panel-title">Social Links</summary>
+          <div class="panel-content">
+            <div id="social-rows" class="social-rows" aria-live="polite"></div>
+            <button type="button" class="secondary-button" id="add-social">Add Social Link</button>
           </div>
-          <div class="section-content">
-            <div class="social-links-editor" id="social-links-editor">
-              <!-- Social link rows generated by editor.js -->
-            </div>
-            <button id="add-social-link" class="add-btn">+ Add Social Link</button>
-          </div>
-        </section>
+        </details>
 
-        <!-- Section: Appearance -->
-        <section class="editor-section" id="section-appearance">
-          <div class="section-header">
-            <h3>🎨 Appearance</h3>
-            <button class="collapse-btn">▼</button>
-          </div>
-          <div class="section-content">
-            <div class="form-group">
-              <label>Layout</label>
-              <div class="btn-group" id="layout-selector">
-                <button class="layout-btn active" data-layout="vertical">Vertical</button>
-                <button class="layout-btn" data-layout="horizontal">Horizontal</button>
-              </div>
+        <details class="panel-block" open>
+          <summary class="panel-title">Appearance</summary>
+          <div class="panel-content">
+            <p class="field-label">Layout</p>
+            <div class="segmented-control" id="layout-control">
+              <button type="button" class="segment is-active" data-layout="vertical">Vertical</button>
+              <button type="button" class="segment" data-layout="horizontal">Horizontal</button>
+              <button type="button" class="segment" data-layout="compact">Compact</button>
             </div>
-            <div class="form-group">
-              <label for="color-accent">Accent Color</label>
-              <input type="color" id="color-accent" value="#4070f4" />
-            </div>
-            <div class="form-group">
-              <label for="color-bg">Card Background</label>
-              <input type="color" id="color-bg" value="#ffffff" />
-            </div>
-            <div class="form-group">
-              <label for="color-text">Text Color</label>
-              <input type="color" id="color-text" value="#333333" />
-            </div>
-            <div class="form-group">
-              <label for="font-select">Font</label>
-              <select id="font-select">
-                <option value="Poppins">Poppins</option>
-                <option value="Inter">Inter</option>
-                <option value="Roboto">Roboto</option>
-                <option value="Montserrat">Montserrat</option>
-                <option value="Playfair Display">Playfair Display</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="border-radius">Border Radius: <span id="border-radius-val">24</span>px</label>
-              <input type="range" id="border-radius" min="0" max="48" value="24" />
-            </div>
-            <div class="form-group">
-              <label for="shadow-intensity">Shadow: <span id="shadow-intensity-val">medium</span></label>
-              <input type="range" id="shadow-intensity" min="0" max="3" value="1" step="1" />
-            </div>
-            <div class="form-group">
-              <label>Icon Style</label>
-              <div class="btn-group" id="icon-style-selector">
-                <button class="icon-style-btn active" data-style="filled">Filled</button>
-                <button class="icon-style-btn" data-style="outline">Outline</button>
-                <button class="icon-style-btn" data-style="minimal">Minimal</button>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- Section: Templates -->
-        <section class="editor-section" id="section-templates">
-          <div class="section-header">
-            <h3>📋 Templates</h3>
-            <button class="collapse-btn">▼</button>
-          </div>
-          <div class="section-content">
-            <div class="default-templates">
-              <p class="section-label">Starter Templates</p>
-              <div class="template-grid" id="starter-templates">
-                <!-- Rendered by templates.js -->
-              </div>
+            <p class="field-label">Icon Style</p>
+            <div class="segmented-control" id="icon-style-control">
+              <button type="button" class="segment is-active" data-icon-style="filled">Filled</button>
+              <button type="button" class="segment" data-icon-style="outline">Outline</button>
+              <button type="button" class="segment" data-icon-style="minimal">Minimal</button>
             </div>
-            <div class="saved-templates">
-              <p class="section-label">Saved Templates</p>
-              <div class="template-grid" id="saved-templates">
-                <!-- Rendered by templates.js -->
-              </div>
-              <button id="save-template-btn" class="save-btn">💾 Save Current as Template</button>
-            </div>
-          </div>
-        </section>
 
-      </div>
+            <label class="field-label" for="font-family">Font</label>
+            <select class="field-input" id="font-family">
+              <option value="Space Grotesk">Space Grotesk</option>
+              <option value="Manrope">Manrope</option>
+              <option value="Sora">Sora</option>
+              <option value="Playfair Display">Playfair Display</option>
+              <option value="Libre Baskerville">Libre Baskerville</option>
+            </select>
+
+            <label class="field-label color-label" for="background-color">Card Background</label>
+            <input class="field-color" type="color" id="background-color" />
+
+            <label class="field-label color-label" for="text-color">Text Color</label>
+            <input class="field-color" type="color" id="text-color" />
+
+            <label class="field-label color-label" for="accent-color">Accent Color</label>
+            <input class="field-color" type="color" id="accent-color" />
+
+            <label class="field-label" for="border-radius">
+              Border Radius <span id="border-radius-value" class="value-chip">24px</span>
+            </label>
+            <input type="range" id="border-radius" min="0" max="48" value="24" />
+
+            <label class="field-label" for="shadow-level">
+              Shadow <span id="shadow-level-value" class="value-chip">Medium</span>
+            </label>
+            <input type="range" id="shadow-level" min="0" max="3" value="2" step="1" />
+
+            <label class="field-label" for="spacing-level">
+              Spacing <span id="spacing-level-value" class="value-chip">24px</span>
+            </label>
+            <input type="range" id="spacing-level" min="12" max="42" value="24" step="1" />
+          </div>
+        </details>
+
+        <details class="panel-block" open>
+          <summary class="panel-title">Templates</summary>
+          <div class="panel-content">
+            <p class="field-label">Starter Templates</p>
+            <div class="template-grid" id="starter-templates"></div>
+
+            <p class="field-label">Saved Templates</p>
+            <div class="template-grid" id="saved-templates"></div>
+
+            <div class="template-actions">
+              <button type="button" class="primary-button" id="save-template">Save Current Template</button>
+              <button type="button" class="secondary-button" id="export-templates">Export Templates JSON</button>
+              <button type="button" class="secondary-button" id="import-templates">Import Templates JSON</button>
+              <input type="file" id="import-templates-input" accept="application/json,.json" hidden />
+            </div>
+          </div>
+        </details>
+      </form>
     </aside>
 
-    <!-- RIGHT: Preview Panel -->
-    <section class="preview-panel">
-      <div class="preview-header">
+    <section class="preview-panel" aria-label="Card preview and export">
+      <div class="preview-toolbar">
         <h2>Live Preview</h2>
         <div class="export-actions">
-          <button class="export-btn" id="export-png">⬇ PNG</button>
-          <button class="export-btn" id="export-svg">⬇ SVG</button>
-          <button class="export-btn" id="export-pdf">⬇ PDF</button>
-          <button class="export-btn" id="export-json">⬇ JSON</button>
-          <button class="export-btn" id="export-html">⬇ HTML</button>
+          <button type="button" class="primary-button" id="export-png">PNG</button>
+          <button type="button" class="primary-button" id="export-svg">SVG</button>
+          <button type="button" class="primary-button" id="export-pdf">PDF</button>
+          <button type="button" class="primary-button" id="export-json">JSON</button>
+          <button type="button" class="primary-button" id="export-html">HTML</button>
         </div>
       </div>
-      <div class="preview-canvas">
-        <div class="preview-scaler">
-          <div id="card-preview" class="card vertical">
-            <div class="card-header-bg"></div>
-            <div class="card-photo-wrapper">
-              <img id="preview-photo" src="" alt="Profile Photo" class="card-photo" />
-              <div id="preview-photo-placeholder" class="card-photo-placeholder">👤</div>
-            </div>
-            <div class="card-body">
-              <h2 class="card-name" id="preview-name">John Doe</h2>
-              <p class="card-profession" id="preview-profession">UI/UX Designer</p>
-              <p class="card-bio" id="preview-bio">A short description about yourself.</p>
-              <div class="card-social" id="preview-social">
-                <!-- Social icons rendered by preview.js -->
-              </div>
-            </div>
+
+      <div class="preview-stage" id="preview-stage">
+        <div class="preview-frame" id="preview-frame">
+          <div class="preview-scale-layer" id="preview-scale-layer">
+            <article id="card-preview" class="cardify-card layout-vertical" aria-label="Personal card preview">
+              <div class="card-accent-strip" aria-hidden="true"></div>
+
+              <figure class="card-photo-slot">
+                <img id="preview-photo" class="card-photo" alt="Profile preview" />
+                <div id="preview-avatar-fallback" class="avatar-fallback" aria-hidden="true">A</div>
+              </figure>
+
+              <section class="card-content">
+                <h3 id="preview-name" class="card-name">Avery Stone</h3>
+                <p id="preview-profession" class="card-profession">Product Engineer</p>
+                <p id="preview-bio" class="card-bio">Building crisp interfaces and useful tooling for modern teams.</p>
+                <nav id="preview-social-links" class="card-social-links" aria-label="Social links"></nav>
+              </section>
+            </article>
           </div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Toast notification -->
-  <div id="toast" class="toast" aria-live="polite"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- JS modules -->
-  <script src="js/utils.js"></script>
-  <script src="js/templates.js"></script>
-  <script src="js/preview.js"></script>
-  <script src="js/editor.js"></script>
-  <script src="js/export.js"></script>
-  <script src="js/main.js"></script>
+  <script src="assets/libs/html2canvas.min.js"></script>
+  <script src="assets/libs/jspdf.umd.min.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
